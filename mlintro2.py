@@ -1,6 +1,9 @@
 
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas
 from sklearn import linear_model
+from sklearn.metrics import r2_score
 from sklearn.preprocessing import StandardScaler
 
 # MULTIPLE REGRESSION is like linear regression, except with multiple independent variables
@@ -41,3 +44,44 @@ REGRESSION_OBJ_SCALED = linear_model.LinearRegression()
 REGRESSION_OBJ_SCALED.fit(SCALED_INDEPENDENT_VARS, DEPENDENT_VAR)
 SCALED_VALUES = SCALE.transform([[2300,1300]])
 print("If the weight is 2300 and the volume is 1300, the CO2 will be {}.".format(REGRESSION_OBJ_SCALED.predict(SCALED_VALUES)[0]))
+
+# to predict if a model is good enough, we use the TRAIN/TEST method
+#	we split the data into a training set (80%) and a testing set (20%)
+#	we use the training set to create our model, and the testing set to... test it!
+
+# lets create a dataset of 100 customers
+np.random.seed(2)
+MINUTES_BEFORE_PURCHASE = np.random.normal(3, 1, 100)
+MONEY_SPENT_ON_PURCHASE = np.random.normal(150,40,100)/MINUTES_BEFORE_PURCHASE
+
+# and split the training and testing sets
+TRAIN_MINUTES_BEFORE_PURCHASE = MINUTES_BEFORE_PURCHASE[:80]
+TRAIN_MONEY_SPENT_ON_PURCHASE = MONEY_SPENT_ON_PURCHASE[:80]
+TEST_MINUTES_BEFORE_PURCHASE = MINUTES_BEFORE_PURCHASE[80:]
+TEST_MONEY_SPENT_ON_PURCHASE = MONEY_SPENT_ON_PURCHASE[80:]
+
+# create multiple graphs to show the full dataset, and then the training and testing ones
+fig, axs = plt.subplots(3)
+
+# now put in the data for each scatterplot
+#	for the testing and training sets to be fair, they should look similar to the full dataset
+axs[0].scatter(MINUTES_BEFORE_PURCHASE, MONEY_SPENT_ON_PURCHASE)
+axs[1].scatter(TRAIN_MINUTES_BEFORE_PURCHASE, TRAIN_MONEY_SPENT_ON_PURCHASE)
+axs[2].scatter(TEST_MINUTES_BEFORE_PURCHASE, TEST_MONEY_SPENT_ON_PURCHASE)
+
+# now, should we use linear regression, polynomial regression, or multiple regression?
+#	based on the shape of the graph and us only having one independent variable, polynomial is best
+POLYNOMIAL_MODEL = np.poly1d(np.polyfit(TRAIN_MINUTES_BEFORE_PURCHASE, TRAIN_MONEY_SPENT_ON_PURCHASE, 4))
+POLYNOMIAL_LINE = np.linspace(0, 6, 100)
+axs[0].plot(POLYNOMIAL_LINE, POLYNOMIAL_MODEL(POLYNOMIAL_LINE))
+
+# by looking at the resulting line, we can see that overfitting has decresed accuracy of our model beyond a certain range
+# lets check the strength of the relationship between the variables using R^2
+print("\nR^2 Score for Training Data: {}".\
+	format(r2_score(TRAIN_MONEY_SPENT_ON_PURCHASE, POLYNOMIAL_MODEL(TRAIN_MINUTES_BEFORE_PURCHASE))))
+print("R^2 Score for Testing Data: {}".\
+	format(r2_score(TEST_MONEY_SPENT_ON_PURCHASE, POLYNOMIAL_MODEL(TEST_MINUTES_BEFORE_PURCHASE))))
+print("If a customer spends five minutes, we predict they'll spend {} dollars.".format(POLYNOMIAL_MODEL(5)))
+
+plt.show()
+
